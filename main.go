@@ -19,7 +19,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/phones", getPhonesHandler).Methods("GET")
 	router.HandleFunc("/phones/{phone}", getPhoneInfoHandler).Methods("GET")
-	router.HandleFunc("/phones/{phone}", postPhoneHandler).Methods("POST")
+	router.HandleFunc("/phones", postPhoneHandler).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
