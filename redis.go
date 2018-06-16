@@ -18,23 +18,15 @@ func redisClient() *redis.Client {
 }
 
 // Get gets the value of a key from the datastore
-func Get(key string) string {
+func Get(key string) (string, error) {
 	client := redisClient()
 
-	val, err := client.Get(key).Result()
-	if err != nil {
-		panic(err)
-	}
-
-	return val
+	return client.Get(key).Result()
 }
 
 // Set sets a key and its value to the datastore
-func Set(key string, value string) {
+func Set(key string, value string) error {
 	client := redisClient()
 
-	err := client.Set(key, value, 0).Err()
-	if err != nil {
-		panic(err)
-	}
+	return client.Set(key, value, 0).Err()
 }

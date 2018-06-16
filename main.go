@@ -19,6 +19,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/phones", getPhonesHandler).Methods("GET")
 	router.HandleFunc("/phones/{phone}", getPhoneInfoHandler).Methods("GET")
+	router.HandleFunc("/phones", postPhoneHandler).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
@@ -34,7 +35,7 @@ func getPhonesHandler(response http.ResponseWriter, request *http.Request) {
 
 	if !ok || len(keys) < 1 {
 		log.Print("Listando todos los teléfonos")
-		json.NewEncoder(response).Encode(phones)
+		respondWithJSON(response, http.StatusFound, phones)
 		return
 	}
 
@@ -52,11 +53,40 @@ func getPhoneInfoHandler(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
 	for _, item := range phones {
 		if item.Phone == params["phone"] {
-			json.NewEncoder(response).Encode(item)
+			respondWithJSON(response, http.StatusFound, item)
 			return
 		}
 	}
 	response.WriteHeader(http.StatusNotFound)
 	json.NewEncoder(response).Encode("Phone not found")
 	log.Print("Listando la información del teléfono " + params["phone_number"])
+}
+
+func postPhoneHandler(response http.ResponseWriter, request *http.Request) {
+	var phone phoneResource
+	decoder := json.NewDecoder(request.Body)
+	if err := decoder.Decode(&phone); err != nil {
+		respondWithError(response, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer request.Body.Close()
+
+	if err := Set("key", "value"); err != nil {
+		respondWithError(response, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(response, http.StatusCreated, phone)
+}
+
+func respondWithError(response http.ResponseWriter, code int, message string) {
+	respondWithJSON(response, code, map[string]string{"error": message})
+}
+
+func respondWithJSON(response http.ResponseWriter, code int, payload interface{}) {
+	bytes, _ := json.Marshal(payload)
+
+	response.Header().Set("Content-Type", "application/json")
+	response.WriteHeader(code)
+	response.Write(bytes)
 }
