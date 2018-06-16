@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -10,17 +9,25 @@ import (
 
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/phones", phonesHandler)
-	router.HandleFunc("/phones/{phone_number}", phoneByPhoneNumberHandler)
+	router.HandleFunc("/phones", phonesHandler).Methods("GET")
+	router.HandleFunc("/phones/{phone_number}", phoneByPhoneNumberHandler).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
 func phonesHandler(response http.ResponseWriter, request *http.Request) {
-	vars := mux.Vars(request)
-	fmt.Println(vars)
+	keys, ok := request.URL.Query()["userId"]
+
+	if !ok || len(keys) < 1 {
+		log.Print("Listando todos los teléfonos")
+		return
+	}
+
+	userId := keys[0]
+	log.Print("Listando los teléfonos del usuario " + userId)
 }
 
 func phoneByPhoneNumberHandler(response http.ResponseWriter, request *http.Request) {
-
+	params := mux.Vars(request)
+	log.Print("Listando la información del teléfono " + params["phone_number"])
 }
