@@ -35,7 +35,7 @@ func getPhonesHandler(response http.ResponseWriter, request *http.Request) {
 
 	if !ok || len(keys) < 1 {
 		log.Print("Listando todos los teléfonos")
-		json.NewEncoder(response).Encode(phones)
+		respondWithJSON(response, http.StatusFound, phones)
 		return
 	}
 
@@ -53,7 +53,7 @@ func getPhoneInfoHandler(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
 	for _, item := range phones {
 		if item.Phone == params["phone"] {
-			json.NewEncoder(response).Encode(item)
+			respondWithJSON(response, http.StatusFound, item)
 			return
 		}
 	}
