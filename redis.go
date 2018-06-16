@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/go-redis/redis"
 )
 
+var serverURL = os.Getenv("SERVER_URL")
+
 // redisClient Creates a new RedisClient
 func redisClient() {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     serverURL + ":6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
