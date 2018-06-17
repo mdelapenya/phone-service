@@ -71,7 +71,7 @@ func postPhoneHandler(response http.ResponseWriter, request *http.Request) {
 	}
 	defer request.Body.Close()
 
-	if err := Set("key", "value"); err != nil {
+	if err := Set(phone.Phone, phone.toJSON()); err != nil {
 		respondWithError(response, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -89,4 +89,17 @@ func respondWithJSON(response http.ResponseWriter, code int, payload interface{}
 	response.Header().Set("Content-Type", "application/json")
 	response.WriteHeader(code)
 	response.Write(bytes)
+}
+
+func (p phoneResource) toJSON() string {
+	var json string
+
+	json += "{"
+	json += "phone: " + p.Phone + ","
+	json += "company: " + p.Company + ","
+	json += "phoneType: " + p.PhoneType + ","
+	json += "userId: " + p.UserID
+	json += "}"
+
+	return json
 }
