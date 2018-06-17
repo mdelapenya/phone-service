@@ -59,7 +59,6 @@ func getPhoneInfoHandler(response http.ResponseWriter, request *http.Request) {
 	}
 	response.WriteHeader(http.StatusNotFound)
 	json.NewEncoder(response).Encode("Phone not found")
-	log.Print("Listando la información del teléfono " + params["phone_number"])
 }
 
 func postPhoneHandler(response http.ResponseWriter, request *http.Request) {
