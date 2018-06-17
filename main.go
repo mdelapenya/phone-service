@@ -44,21 +44,15 @@ func getPhonesHandler(response http.ResponseWriter, request *http.Request) {
 }
 
 func getPhoneInfoHandler(response http.ResponseWriter, request *http.Request) {
-	var phones []phoneResource
-
-	phones = append(phones, phoneResource{Phone: "123456789", Company: "Movistar", PhoneType: "Fijo", UserID: "242"})
-	phones = append(phones, phoneResource{Phone: "987654321", Company: "Orange", PhoneType: "Móvil", UserID: "1234"})
-	phones = append(phones, phoneResource{Phone: "234293735", Company: "Vodafone", PhoneType: "Móvil", UserID: "3242"})
-
 	params := mux.Vars(request)
-	for _, item := range phones {
-		if item.Phone == params["phone"] {
-			respondWithJSON(response, http.StatusFound, item)
-			return
-		}
+
+	phone, err := Get(params["phone"])
+	if err != nil {
+		respondWithJSON(response, http.StatusNotFound, "Phone not found")
+		return
 	}
-	response.WriteHeader(http.StatusNotFound)
-	json.NewEncoder(response).Encode("Phone not found")
+
+	respondWithJSON(response, http.StatusFound, phone)
 }
 
 func postPhoneHandler(response http.ResponseWriter, request *http.Request) {
