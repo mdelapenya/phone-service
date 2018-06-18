@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -117,8 +118,22 @@ func (app *App) initializeDatabase() {
 		log.Fatal(err)
 	}
 
-	if _, err := app.DB.Exec(PhonesTableCreationQuery); err != nil {
-		log.Fatal(err)
+	channel := make(chan bool, 1)
+	go func() {
+		time.Sleep(2 * time.Second)
+
+		app.DB.Exec(PhonesTableCreationQuery)
+
+		channel <- true
+	}()
+
+	select {
+	case <-channel:
+		log.Println("Database initialised properly: tables created")
+	case <-time.After(2 * time.Second):
+		log.Println("Retrying to initialise the database...")
+		app.DB.Exec(PhonesTableCreationQuery)
+		log.Println("Database initialised properly: tables created")
 	}
 }
 
