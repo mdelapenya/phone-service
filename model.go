@@ -11,7 +11,7 @@ id SERIAL,
 phone TEXT NOT NULL,
 company TEXT NOT NULL,
 phoneType TEXT NOT NULL,
-userId NUMERIC(8) NOT NULL,
+userId TEXT NOT NULL,
 CONSTRAINT phones_pkey PRIMARY KEY (id)
 )`
 

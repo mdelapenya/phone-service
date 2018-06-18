@@ -16,7 +16,7 @@ var app App
 func TestCreatePhone(t *testing.T) {
 	clearTable()
 
-	payload := []byte(`{"phone":"666111222","company":"Movistar","phoneType="mobile","userId":1}`)
+	payload := []byte(`{"phone":"666111222","company":"Movistar","phoneType="mobile","userId":"1"}`)
 
 	req, _ := http.NewRequest("POST", "/phone", bytes.NewBuffer(payload))
 	response := executeRequest(req)
@@ -129,7 +129,7 @@ func TestUpdatePhone(t *testing.T) {
 	var originalPhone map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &originalPhone)
 
-	payload := []byte(`{"phone":"666111222","company":"Movistar","phoneType="updated","userId":1}`)
+	payload := []byte(`{"phone":"666111222","company":"Movistar","phoneType="updated","userId":"1"}`)
 
 	req, _ = http.NewRequest("PUT", "/phone/1", bytes.NewBuffer(payload))
 	response = executeRequest(req)
@@ -161,7 +161,7 @@ func addPhones(count int) {
 
 		app.DB.Exec(
 			"INSERT INTO phones(phone, company, phoneType, userId) VALUES($1, $2, $3, $4)",
-			"Phone "+index, "Company"+index, "mobile", i)
+			"Phone "+index, "Company"+index, "mobile", string(i))
 	}
 }
 
