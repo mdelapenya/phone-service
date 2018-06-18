@@ -26,10 +26,6 @@
 
 
 [[constraint]]
-  name = "github.com/go-redis/redis"
-  version = "6.12.0"
-
-[[constraint]]
   name = "github.com/gorilla/mux"
   version = "1.6.2"
 

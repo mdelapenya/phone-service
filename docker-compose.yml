@@ -3,11 +3,18 @@ services:
   app:
     build: .
     environment:
-      - SERVER_URL=redis
+      - DB_HOSTNAME=postgres
+      - POSTGRES_PASSWORD=passw0rd
+      - POSTGRES_USER=gdgtoledo
+      - POSTGRES_DB=phones
     ports:
       - "8000:8000"
 
-  redis:
-    image: redis:3.2.12-alpine
+  postgres:
+    image: postgres:9.5-alpine
+    environment:
+      - POSTGRES_PASSWORD=passw0rd
+      - POSTGRES_USER=gdgtoledo
+      - POSTGRES_DB=phones
     ports:
-      - "6379:6379"
+      - "5432:5432"

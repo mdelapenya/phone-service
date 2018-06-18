@@ -1,62 +1,40 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
-type phoneResource struct {
-	Phone     string `json:"phone,omitempty"`
-	Company   string `json:"company,omitempty"`
-	PhoneType string `json:"phone_type,omitempty"`
-	UserID    string `json:"userId,omitempty"`
+// App the application object
+type App struct {
+	Router *mux.Router
+	DB     *sql.DB
 }
 
-func main() {
-	router := mux.NewRouter()
-	router.HandleFunc("/phones", getPhonesHandler).Methods("GET")
-	router.HandleFunc("/phones/{phone}", getPhoneInfoHandler).Methods("GET")
-	router.HandleFunc("/phones", postPhoneHandler).Methods("POST")
+// Initialize init the application
+func (app *App) Initialize() {
+	app.initializeDatabase()
 
-	log.Fatal(http.ListenAndServe(":8000", router))
+	app.Router = mux.NewRouter()
+	app.initializeRoutes()
 }
 
-func getPhonesHandler(response http.ResponseWriter, request *http.Request) {
-	var phones []phoneResource
-
-	phones = append(phones, phoneResource{Phone: "123456789", Company: "Movistar", PhoneType: "Fijo", UserID: "242"})
-	phones = append(phones, phoneResource{Phone: "987654321", Company: "Orange", PhoneType: "Móvil", UserID: "1234"})
-	phones = append(phones, phoneResource{Phone: "234293735", Company: "Vodafone", PhoneType: "Móvil", UserID: "3242"})
-
-	keys, ok := request.URL.Query()["userId"]
-
-	if !ok || len(keys) < 1 {
-		log.Print("Listando todos los teléfonos")
-		respondWithJSON(response, http.StatusFound, phones)
-		return
-	}
-
-	userID := keys[0]
-	log.Print("Listando los teléfonos del usuario " + userID)
+// Run run the application
+func (app *App) Run(address string) {
+	log.Fatal(http.ListenAndServe(address, app.Router))
 }
 
-func getPhoneInfoHandler(response http.ResponseWriter, request *http.Request) {
-	params := mux.Vars(request)
-
-	phone, err := Get(params["phone"])
-	if err != nil {
-		respondWithJSON(response, http.StatusNotFound, "Phone not found")
-		return
-	}
-
-	respondWithJSON(response, http.StatusFound, phone)
-}
-
-func postPhoneHandler(response http.ResponseWriter, request *http.Request) {
-	var phone phoneResource
+func (app *App) createPhoneHandler(response http.ResponseWriter, request *http.Request) {
+	var phone phone
 	decoder := json.NewDecoder(request.Body)
 	if err := decoder.Decode(&phone); err != nil {
 		respondWithError(response, http.StatusBadRequest, "Invalid request payload")
@@ -64,12 +42,114 @@ func postPhoneHandler(response http.ResponseWriter, request *http.Request) {
 	}
 	defer request.Body.Close()
 
-	if err := Set(phone.Phone, phone.toJSON()); err != nil {
+	if err := phone.createPhone(app.DB); err != nil {
 		respondWithError(response, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	respondWithJSON(response, http.StatusCreated, phone)
+}
+
+func (app *App) deletePhoneHandler(response http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	phoneID := vars["phone"]
+
+	phone := phone{Phone: phoneID}
+	if err := phone.deletePhone(app.DB); err != nil {
+		respondWithError(response, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(response, http.StatusOK, map[string]string{"result": "success"})
+}
+
+func (app *App) getPhoneHandler(response http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	phoneID := vars["phone"]
+
+	phone := phone{Phone: phoneID}
+	if err := phone.getPhone(app.DB); err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			respondWithError(response, http.StatusNotFound, "Phone not found")
+		default:
+			respondWithError(response, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	respondWithJSON(response, http.StatusOK, phone)
+}
+
+func (app *App) getPhonesHandler(response http.ResponseWriter, request *http.Request) {
+	count, _ := strconv.Atoi(request.FormValue("count"))
+	start, _ := strconv.Atoi(request.FormValue("start"))
+
+	if count > 10 || count < 1 {
+		count = 10
+	}
+	if start < 0 {
+		start = 0
+	}
+
+	phones, err := getPhones(app.DB, start, count)
+	if err != nil {
+		respondWithError(response, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(response, http.StatusOK, phones)
+}
+
+func (app *App) initializeDatabase() {
+	dbHostname := os.Getenv("DB_HOSTNAME")
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	dbName := os.Getenv("POSTGRES_DB")
+
+	connectionString :=
+		fmt.Sprintf(
+			"host=%s user=%s password=%s dbname=%s sslmode=disable",
+			dbHostname, user, password, dbName)
+
+	var err error
+	app.DB, err = sql.Open("postgres", connectionString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	channel := make(chan bool, 1)
+	go func() {
+		time.Sleep(2 * time.Second)
+
+		app.DB.Exec(PhonesTableCreationQuery)
+
+		channel <- true
+	}()
+
+	select {
+	case <-channel:
+		log.Println("Database initialised properly: tables created")
+	case <-time.After(2 * time.Second):
+		log.Println("Retrying to initialise the database...")
+		app.DB.Exec(PhonesTableCreationQuery)
+		log.Println("Database initialised properly: tables created")
+	}
+}
+
+func (app *App) initializeRoutes() {
+	app.Router.HandleFunc("/phones", app.getPhonesHandler).Methods("GET")
+	app.Router.HandleFunc("/phone", app.createPhoneHandler).Methods("POST")
+	app.Router.HandleFunc("/phone/{phone:[0-9]+}", app.getPhoneHandler).Methods("GET")
+	app.Router.HandleFunc("/phone/{phone:[0-9]+}", app.updatePhoneHandler).Methods("PUT")
+	app.Router.HandleFunc("/phone/{phone:[0-9]+}", app.deletePhoneHandler).Methods("DELETE")
+}
+
+func main() {
+	app := App{}
+	app.Initialize()
+
+	app.Run(":8000")
 }
 
 func respondWithError(response http.ResponseWriter, code int, message string) {
@@ -84,15 +164,23 @@ func respondWithJSON(response http.ResponseWriter, code int, payload interface{}
 	response.Write(bytes)
 }
 
-func (p phoneResource) toJSON() string {
-	var json string
+func (app *App) updatePhoneHandler(response http.ResponseWriter, request *http.Request) {
+	vars := mux.Vars(request)
+	phoneID := vars["phone"]
 
-	json += "{"
-	json += "phone: " + p.Phone + ","
-	json += "company: " + p.Company + ","
-	json += "phoneType: " + p.PhoneType + ","
-	json += "userId: " + p.UserID
-	json += "}"
+	var p phone
+	decoder := json.NewDecoder(request.Body)
+	if err := decoder.Decode(&p); err != nil {
+		respondWithError(response, http.StatusBadRequest, "Invalid resquest payload")
+		return
+	}
+	defer request.Body.Close()
+	p.Phone = phoneID
 
-	return json
+	if err := p.updatePhone(app.DB); err != nil {
+		respondWithError(response, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(response, http.StatusOK, p)
 }

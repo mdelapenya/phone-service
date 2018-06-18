@@ -2,21 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/go-redis/redis"
-  packages = [
-    ".",
-    "internal",
-    "internal/consistenthash",
-    "internal/hashtag",
-    "internal/pool",
-    "internal/proto",
-    "internal/singleflight",
-    "internal/util"
-  ]
-  revision = "83fb42932f6145ce52df09860384a4653d2d332a"
-  version = "v6.12.0"
-
-[[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
   revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
@@ -28,9 +13,18 @@
   revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
   version = "v1.6.2"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid"
+  ]
+  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6063810aa559cc5a70ddf414479d71f4e242fdfc322b1fdf5f533b12b3109d1f"
+  inputs-digest = "8adada39b4710bfd7519a6ee13f9802daa54e51951623f55d8b6ade604330bd9"
   solver-name = "gps-cdcl"
   solver-version = 1
