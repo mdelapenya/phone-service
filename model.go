@@ -4,6 +4,17 @@ import (
 	"database/sql"
 )
 
+// PhonesTableCreationQuery SQL to create the table phones
+const PhonesTableCreationQuery = `CREATE TABLE IF NOT EXISTS phones
+(
+id SERIAL,
+phone TEXT NOT NULL,
+company TEXT NOT NULL,
+phoneType TEXT NOT NULL,
+userId NUMERIC(8) NOT NULL,
+CONSTRAINT phones_pkey PRIMARY KEY (id)
+)`
+
 type phone struct {
 	ID        int    `json:"id,omitempty"`
 	Phone     string `json:"phone,omitempty"`
