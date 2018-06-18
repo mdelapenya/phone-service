@@ -69,13 +69,9 @@ func (app *App) createPhoneHandler(response http.ResponseWriter, request *http.R
 
 func (app *App) deletePhoneHandler(response http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		respondWithError(response, http.StatusBadRequest, "Invalid Phone ID")
-		return
-	}
+	phoneID := vars["phone"]
 
-	phone := phone{ID: id}
+	phone := phone{Phone: phoneID}
 	if err := phone.deletePhone(app.DB); err != nil {
 		respondWithError(response, http.StatusInternalServerError, err.Error())
 		return
@@ -86,13 +82,9 @@ func (app *App) deletePhoneHandler(response http.ResponseWriter, request *http.R
 
 func (app *App) getPhoneHandler(response http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		respondWithError(response, http.StatusBadRequest, "Invalid phone ID")
-		return
-	}
+	phoneID := vars["phone"]
 
-	phone := phone{ID: id}
+	phone := phone{Phone: phoneID}
 	if err := phone.getPhone(app.DB); err != nil {
 		switch err {
 		case sql.ErrNoRows:
@@ -129,9 +121,9 @@ func (app *App) getPhonesHandler(response http.ResponseWriter, request *http.Req
 func (app *App) initializeRoutes() {
 	app.Router.HandleFunc("/phones", app.getPhonesHandler).Methods("GET")
 	app.Router.HandleFunc("/phone", app.createPhoneHandler).Methods("POST")
-	app.Router.HandleFunc("/phone/{id:[0-9]+}", app.getPhoneHandler).Methods("GET")
-	app.Router.HandleFunc("/phone/{id:[0-9]+}", app.updatePhoneHandler).Methods("PUT")
-	app.Router.HandleFunc("/phone/{id:[0-9]+}", app.deletePhoneHandler).Methods("DELETE")
+	app.Router.HandleFunc("/phone/{phone:[0-9]+}", app.getPhoneHandler).Methods("GET")
+	app.Router.HandleFunc("/phone/{phone:[0-9]+}", app.updatePhoneHandler).Methods("PUT")
+	app.Router.HandleFunc("/phone/{phone:[0-9]+}", app.deletePhoneHandler).Methods("DELETE")
 }
 
 func main() {
@@ -155,11 +147,7 @@ func respondWithJSON(response http.ResponseWriter, code int, payload interface{}
 
 func (app *App) updatePhoneHandler(response http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		respondWithError(response, http.StatusBadRequest, "Invalid phone ID")
-		return
-	}
+	phoneID := vars["phone"]
 
 	var p phone
 	decoder := json.NewDecoder(request.Body)
@@ -168,7 +156,7 @@ func (app *App) updatePhoneHandler(response http.ResponseWriter, request *http.R
 		return
 	}
 	defer request.Body.Close()
-	p.ID = id
+	p.Phone = phoneID
 
 	if err := p.updatePhone(app.DB); err != nil {
 		respondWithError(response, http.StatusInternalServerError, err.Error())

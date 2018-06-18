@@ -53,16 +53,16 @@ func TestDeletePhone(t *testing.T) {
 	clearTable()
 	addPhones(1)
 
-	req, _ := http.NewRequest("GET", "/phone/1", nil)
+	req, _ := http.NewRequest("GET", "/phone/Phone1", nil)
 	response := executeRequest(req)
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("DELETE", "/phone/1", nil)
+	req, _ = http.NewRequest("DELETE", "/phone/Phone1", nil)
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	req, _ = http.NewRequest("GET", "/phone/1", nil)
+	req, _ = http.NewRequest("GET", "/phone/Phone1", nil)
 	response = executeRequest(req)
 	checkResponseCode(t, http.StatusNotFound, response.Code)
 }
@@ -84,7 +84,7 @@ func TestGetPhone(t *testing.T) {
 	clearTable()
 	addPhones(1)
 
-	req, _ := http.NewRequest("GET", "/phone/1", nil)
+	req, _ := http.NewRequest("GET", "/phone/Phone1", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -93,7 +93,7 @@ func TestGetPhone(t *testing.T) {
 func TestGetNonExistentPhone(t *testing.T) {
 	clearTable()
 
-	req, _ := http.NewRequest("GET", "/phone/11", nil)
+	req, _ := http.NewRequest("GET", "/phone/Phone11", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusNotFound, response.Code)
@@ -124,14 +124,14 @@ func TestUpdatePhone(t *testing.T) {
 	clearTable()
 	addPhones(1)
 
-	req, _ := http.NewRequest("GET", "/phone/1", nil)
+	req, _ := http.NewRequest("GET", "/phone/Phone1", nil)
 	response := executeRequest(req)
 	var originalPhone map[string]interface{}
 	json.Unmarshal(response.Body.Bytes(), &originalPhone)
 
 	payload := []byte(`{"phone":"666111222","company":"Movistar","phoneType="updated","userId":"1"}`)
 
-	req, _ = http.NewRequest("PUT", "/phone/1", bytes.NewBuffer(payload))
+	req, _ = http.NewRequest("PUT", "/phone/666111222", bytes.NewBuffer(payload))
 	response = executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -161,7 +161,7 @@ func addPhones(count int) {
 
 		app.DB.Exec(
 			"INSERT INTO phones(phone, company, phoneType, userId) VALUES($1, $2, $3, $4)",
-			"Phone "+index, "Company"+index, "mobile", string(i))
+			"Phone"+index, "Company"+index, "mobile", string(i))
 	}
 }
 
@@ -173,7 +173,6 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 
 func clearTable() {
 	app.DB.Exec("DELETE FROM phones")
-	app.DB.Exec("ALTER SEQUENCE phones_id_seq RESTART WITH 1")
 }
 
 func ensureTableExists() {
