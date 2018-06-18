@@ -50,6 +50,23 @@ func (app *App) Run(address string) {
 	log.Fatal(http.ListenAndServe(address, app.Router))
 }
 
+func (app *App) createPhoneHandler(response http.ResponseWriter, request *http.Request) {
+	var phone phone
+	decoder := json.NewDecoder(request.Body)
+	if err := decoder.Decode(&phone); err != nil {
+		respondWithError(response, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+	defer request.Body.Close()
+
+	if err := phone.createPhone(app.DB); err != nil {
+		respondWithError(response, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	respondWithJSON(response, http.StatusCreated, phone)
+}
+
 func (app *App) deletePhoneHandler(response http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	id, err := strconv.Atoi(vars["id"])
@@ -122,23 +139,6 @@ func main() {
 	app.Initialize()
 
 	app.Run(":8000")
-}
-
-func (app *App) createPhoneHandler(response http.ResponseWriter, request *http.Request) {
-	var phone phone
-	decoder := json.NewDecoder(request.Body)
-	if err := decoder.Decode(&phone); err != nil {
-		respondWithError(response, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
-	defer request.Body.Close()
-
-	if err := phone.createPhone(app.DB); err != nil {
-		respondWithError(response, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	respondWithJSON(response, http.StatusCreated, phone)
 }
 
 func respondWithError(response http.ResponseWriter, code int, message string) {
