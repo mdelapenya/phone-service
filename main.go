@@ -21,25 +21,7 @@ type App struct {
 
 // Initialize init the application
 func (app *App) Initialize() {
-	dbHostname := os.Getenv("DB_HOSTNAME")
-	user := os.Getenv("POSTGRES_USER")
-	password := os.Getenv("POSTGRES_PASSWORD")
-	dbName := os.Getenv("POSTGRES_DB")
-
-	connectionString :=
-		fmt.Sprintf(
-			"host=%s user=%s password=%s dbname=%s sslmode=disable",
-			dbHostname, user, password, dbName)
-
-	var err error
-	app.DB, err = sql.Open("postgres", connectionString)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if _, err := app.DB.Exec(PhonesTableCreationQuery); err != nil {
-		log.Fatal(err)
-	}
+	app.initializeDatabase()
 
 	app.Router = mux.NewRouter()
 	app.initializeRoutes()
@@ -116,6 +98,28 @@ func (app *App) getPhonesHandler(response http.ResponseWriter, request *http.Req
 	}
 
 	respondWithJSON(response, http.StatusOK, phones)
+}
+
+func (app *App) initializeDatabase() {
+	dbHostname := os.Getenv("DB_HOSTNAME")
+	user := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	dbName := os.Getenv("POSTGRES_DB")
+
+	connectionString :=
+		fmt.Sprintf(
+			"host=%s user=%s password=%s dbname=%s sslmode=disable",
+			dbHostname, user, password, dbName)
+
+	var err error
+	app.DB, err = sql.Open("postgres", connectionString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := app.DB.Exec(PhonesTableCreationQuery); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (app *App) initializeRoutes() {
